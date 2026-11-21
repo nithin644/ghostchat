@@ -94,7 +94,7 @@
   <h3>✨ Desktop Chat & E2EE Secure Messaging</h3>
   <p><i>Full WhatsApp-style conversational interface with reactions, reply quote threads, and verified contact identification.</i></p>
   <!-- Replace the placeholder URL below with your screenshot URL -->
-  <img src="https://via.placeholder.com/1200x675.png?text=GhostChat+Desktop+Interface" alt="GhostChat Desktop Interface" width="900" />
+  <img src="https://github.com/user-attachments/assets/94747180-3312-4c5f-a3ce-9ccfdbfb6b56" alt="GhostChat Desktop Interface" width="900" />
 </div>
 
 <br/>
@@ -106,13 +106,13 @@
         <b>💥 Interactive FX Reactions (/bomb, /fire, /love)</b><br/>
         <sub>Screen shake, synchronized particle explosions & audio synthesis</sub><br/><br/>
         <!-- Replace the placeholder URL below with your screenshot URL -->
-        <img src="https://via.placeholder.com/600x400.png?text=Interactive+Slash+FX+Reactions" alt="Interactive Slash FX Reactions" width="420" />
+        <img src="https://github.com/user-attachments/assets/80dc2977-35eb-4a2e-9291-c6dce6b5332b" alt="Interactive Slash FX Reactions" width="420" />
       </td>
       <td width="50%" align="center">
         <b>🎨 5 Curated Themes & Instant Switching</b><br/>
         <sub>Midnight Obsidian, Executive Slate, Nordic Minimalist, Hacker & Normal</sub><br/><br/>
         <!-- Replace the placeholder URL below with your screenshot URL -->
-        <img src="https://via.placeholder.com/600x400.png?text=5+Curated+Themes+Showcase" alt="5 Curated Themes Showcase" width="420" />
+        <img src="https://github.com/user-attachments/assets/77c51a0c-2b76-4104-9009-f41beed42bf9" alt="5 Curated Themes Showcase" width="420" />
       </td>
     </tr>
     <tr>
@@ -120,13 +120,13 @@
         <b>🎙️ Walkie-Talkie & Waveform Voice Notes</b><br/>
         <sub>Live PTT intercom with audio visualizer and waveform recorder</sub><br/><br/>
         <!-- Replace the placeholder URL below with your screenshot URL -->
-        <img src="https://via.placeholder.com/600x400.png?text=Walkie-Talkie+and+Voice+Notes" alt="Walkie Talkie and Voice Note" width="420" />
+        <img src="https://github.com/user-attachments/assets/a3a8389d-38d6-4c77-b585-33125030cdf2" alt="Walkie Talkie and Voice Note" width="420" />
       </td>
       <td width="50%" align="center">
         <b>📱 Responsive Mobile View</b><br/>
         <sub>Optimized for mobile Chrome, Safari, and Tor Browser</sub><br/><br/>
         <!-- Replace the placeholder URL below with your screenshot URL -->
-        <img src="https://via.placeholder.com/600x400.png?text=Responsive+Mobile+Chat" alt="Mobile Chat Experience" width="420" />
+        <img src="https://github.com/user-attachments/assets/ffdadd9e-5482-427c-8913-d413e2f9192f" alt="Mobile Chat Experience" width="420" />
       </td>
     </tr>
     <tr>
@@ -134,13 +134,13 @@
         <b>📹 E2EE Video Calling & Screen Share</b><br/>
         <sub>WebRTC encrypted video streaming & live desktop broadcast</sub><br/><br/>
         <!-- Replace the placeholder URL below with your screenshot URL -->
-        <img src="https://via.placeholder.com/600x400.png?text=Video+Call+and+Screen+Share" alt="Video Call & Screen Share" width="420" />
+        <img src="https://github.com/user-attachments/assets/2de9b7f9-5f26-4fcf-84da-2600fcc72bc8" alt="Video Call & Screen Share" width="420" />
       </td>
       <td width="50%" align="center">
         <b>👥 WhatsApp Groups & Invites</b><br/>
         <sub>2-step group creator with member roster & invite management</sub><br/><br/>
         <!-- Replace the placeholder URL below with your screenshot URL -->
-        <img src="https://via.placeholder.com/600x400.png?text=Group+Management+and+Invites" alt="Group Management and Invites" width="420" />
+        <img src="https://github.com/user-attachments/assets/30995d47-3b7e-4b1f-b7a2-e66f6abe23b6" alt="Group Management and Invites" width="420" />
       </td>
     </tr>
     <tr>
@@ -148,13 +148,13 @@
         <b>🛡️ Fleet Administration Console</b><br/>
         <sub>Access key minting, user verification, and account controls</sub><br/><br/>
         <!-- Replace the placeholder URL below with your screenshot URL -->
-        <img src="https://via.placeholder.com/600x400.png?text=Admin+Fleet+Dashboard" alt="Admin Fleet Dashboard" width="420" />
+        <img src="https://github.com/user-attachments/assets/4e57aec0-0e0a-4bd8-9a2c-6c2111837e29" alt="Admin Fleet Dashboard" width="420" />
       </td>
       <td width="50%" align="center">
         <b>🚀 Stylized Startup Banner (run.sh)</b><br/>
         <sub>Gradient ASCII art, developer tagline & clean dual-stack URLs</sub><br/><br/>
         <!-- Replace the placeholder URL below with your screenshot URL -->
-        <img src="https://via.placeholder.com/600x400.png?text=GhostChat+Terminal+Startup+Banner" alt="Terminal Startup Banner" width="420" />
+        <img src="https://github.com/user-attachments/assets/c7987809-3989-4fed-88d7-6576e85374a7" alt="Terminal Startup Banner" width="420" />
       </td>
     </tr>
   </table>
