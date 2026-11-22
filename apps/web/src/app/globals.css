@@ -1,0 +1,269 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-wa-panel text-black/85 antialiased;
+  /* The app is a fixed-height shell, like WhatsApp Web: no page-level scroll,
+     only the message list scrolls. */
+  overflow: hidden;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 9999px;
+}
+
+/* Keyboard focus must stay visible: removing outlines is an accessibility bug,
+   not a design choice. */
+:focus-visible {
+  outline: 2px solid #128c7e;
+  outline-offset: 2px;
+}
+
+/* Hacker Theme Overrides */
+[data-theme="hacker"],
+[data-theme="hacker"] body {
+  background-color: #030804 !important;
+  color: #00ff66 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+[data-theme="hacker"] *::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 102, 0.4);
+}
+
+[data-theme="hacker"] :focus-visible {
+  outline: 2px solid #00ff66;
+}
+
+/* Professional Theme Overrides */
+[data-theme="pro"],
+[data-theme="pro"] body {
+  background-color: #0a0f1d !important;
+  color: #f1f5f9 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+[data-theme="pro"] *::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+[data-theme="pro"] :focus-visible {
+  outline: 2px solid #3b82f6;
+}
+
+/* Midnight Obsidian Theme Overrides */
+[data-theme="midnight"],
+[data-theme="midnight"] body {
+  background-color: #090a0f !important;
+  color: #f8fafc !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif !important;
+}
+
+[data-theme="midnight"] *::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="midnight"] :focus-visible {
+  outline: 2px solid #6366f1;
+}
+
+/* Nordic Minimalist Theme Overrides */
+[data-theme="nordic"],
+[data-theme="nordic"] body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif !important;
+}
+
+[data-theme="nordic"] *::-webkit-scrollbar-thumb {
+  background: rgba(2, 132, 199, 0.3);
+}
+
+[data-theme="nordic"] :focus-visible {
+  outline: 2px solid #0284c7;
+}
+
+/* Normal Theme Overrides */
+[data-theme="normal"],
+[data-theme="normal"] body {
+  background-color: #0f1216 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="normal"] *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="normal"] :focus-visible {
+  outline: 2px solid #10b981;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  color: inherit;
+  -webkit-text-fill-color: currentColor;
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 0.55;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes adminCardEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-card-enter {
+  animation: adminCardEnter 420ms ease-out both;
+}
+
+/* Bomb Explosion & Screen Vibration Effects */
+@keyframes bombScreenShake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-10px, 8px) rotate(-1.5deg); }
+  20% { transform: translate(12px, -8px) rotate(1.5deg); }
+  30% { transform: translate(-12px, 10px) rotate(-1deg); }
+  40% { transform: translate(10px, -8px) rotate(1deg); }
+  50% { transform: translate(-8px, 6px) rotate(-0.5deg); }
+  60% { transform: translate(6px, -4px) rotate(0.5deg); }
+  70% { transform: translate(-4px, 3px) rotate(0deg); }
+  80% { transform: translate(3px, -2px) rotate(0deg); }
+  90% { transform: translate(-1px, 1px) rotate(0deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.animate-bomb-shake {
+  animation: bombScreenShake 1.05s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes bombDrop {
+  0% { transform: translateY(-180px) scale(0.2) rotate(-20deg); opacity: 0; }
+  60% { transform: translateY(0) scale(1.2) rotate(6deg); opacity: 1; }
+  80% { transform: translateY(-16px) scale(0.95) rotate(-3deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+}
+
+.animate-bomb-drop {
+  animation: bombDrop 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes bombFuseFlame {
+  0%, 100% { transform: scale(1) rotate(-10deg); filter: drop-shadow(0 0 12px rgba(255, 87, 34, 0.9)); }
+  50% { transform: scale(1.35) rotate(10deg); filter: drop-shadow(0 0 24px rgba(255, 235, 59, 1)); }
+}
+
+.animate-fuse-flame {
+  animation: bombFuseFlame 0.12s ease-in-out infinite;
+}
+
+@keyframes bombShockwave {
+  0% { transform: scale(0.1); opacity: 1; border-width: 8px; }
+  50% { opacity: 0.85; border-width: 4px; }
+  100% { transform: scale(4.2); opacity: 0; border-width: 1px; }
+}
+
+.animate-bomb-shockwave {
+  animation: bombShockwave 0.85s ease-out forwards;
+}
+
+@keyframes bombFlash {
+  0% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+.animate-bomb-flash {
+  animation: bombFlash 0.65s ease-out forwards;
+}
+
+/* Fire Blaze & Ember Animations */
+@keyframes fireFlicker {
+  0%, 100% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 16px rgba(255, 69, 0, 0.85)); }
+  33% { transform: scale(1.18) rotate(4deg); filter: drop-shadow(0 0 30px rgba(255, 165, 0, 1)); }
+  66% { transform: scale(0.92) rotate(-2deg); filter: drop-shadow(0 0 22px rgba(255, 0, 0, 0.9)); }
+}
+
+.animate-fire-flicker {
+  animation: fireFlicker 0.22s ease-in-out infinite;
+}
+
+@keyframes fireGlow {
+  0% { opacity: 0; }
+  25% { opacity: 0.75; }
+  75% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+.animate-fire-glow {
+  animation: fireGlow 1.95s ease-out forwards;
+}
+
+/* Love Hearts Floating Animations */
+@keyframes heartFloatUp {
+  0% {
+    transform: translateY(120%) scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(90%) scale(1) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(30%) scale(1.15) rotate(8deg);
+  }
+  80% {
+    opacity: 0.9;
+    transform: translateY(-40%) scale(1.05) rotate(-5deg);
+  }
+  100% {
+    transform: translateY(-120%) scale(0.85) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+@keyframes heartPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(244, 63, 94, 0.6)); }
+  50% { transform: scale(1.22); filter: drop-shadow(0 0 28px rgba(236, 72, 153, 0.95)); }
+}
+
+.animate-heart-pulse {
+  animation: heartPulse 0.45s ease-in-out infinite;
+}
+
+@keyframes loveGlow {
+  0% { opacity: 0; }
+  25% { opacity: 0.75; }
+  75% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+.animate-love-glow {
+  animation: loveGlow 1.95s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .admin-card-enter { animation: none; }
+  .animate-bomb-shake { animation: none; }
+}

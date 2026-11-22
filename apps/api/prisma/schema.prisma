@@ -1,0 +1,416 @@
+// GhostChat data model.
+//
+// Privacy invariants enforced at the schema level:
+//   * No email, phone, legal name, or IP address column exists anywhere.
+//   * `Message.senderPseudoId` is NULLABLE: sealed-sender messages genuinely
+//     have no sender attached at rest.
+//   * `AccessKey.verifier` is deleted on claim; a claimed key stores only the
+//     public locator, never anything from which the access key is recoverable.
+//   * Message bodies live only in `ciphertext`; there is no plaintext column to
+//     accidentally populate.
+//
+// Deletion: `onDelete: Cascade` from Conversation to Message ensures a
+// conversation purge (or account purge) removes ciphertext, not just pointers.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+enum KeyStatus {
+  UNCLAIMED
+  CLAIMED
+  REVOKED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  DELETED
+}
+
+model AccessKey {
+  id         String    @id @default(uuid()) @db.Uuid
+  /// Public locator: unkeyed BLAKE2b-128 of the access key, base64url.
+  contactCode String   @unique
+  /// Random 16-byte Argon2id salt, public. Served pre-authentication.
+  identitySalt String
+  /// One-time claim proof. NULL once claimed or never set by the mint path.
+  verifier   String?
+  label      String?
+  status     KeyStatus @default(UNCLAIMED)
+  expiresAt  DateTime?
+  claimedAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user       User?
+
+  @@index([status])
+  @@index([label])
+}
+
+model User {
+  id            String     @id @default(uuid()) @db.Uuid
+  /// Deterministic opaque handle. Not derived from any real-world identifier.
+  pseudoId      String     @unique
+  /// 3-digit random User ID for quick contact finding (e.g. 100-999).
+  numericId     String?    @unique
+  displayName   String     @db.VarChar(48)
+  role          UserRole   @default(USER)
+  status        UserStatus @default(ACTIVE)
+  isVerified     Boolean    @default(false)
+
+  accessKeyId   String     @unique @db.Uuid
+  accessKey     AccessKey  @relation(fields: [accessKeyId], references: [id], onDelete: Cascade)
+
+  /// Ed25519 long-term signing key (base64). Public.
+  identitySignPublicKey String
+  /// X25519 long-term DH key (base64). Public.
+  identityDhPublicKey   String
+  /// First 8 bytes of BLAKE2b over the signing key, hex. UI-only fingerprint.
+  keyFingerprint        String
+
+  avatarObjectKey String?
+  avatarHash      String?
+  /// Ed25519 signature over the published pre-key bundle, produced by the owner.
+  bundleSignature String?
+
+  createdAt     DateTime   @default(now())
+  lastSeenAt    DateTime?
+  lastIp        String?
+  bannedAt      DateTime?
+
+  signedPreKeys SignedPreKey[]
+  oneTimePreKeys OneTimePreKey[]
+  memberships   ConversationMember[]
+  messages      Message[]
+  receipts      Receipt[]
+  invites       GroupInvite[]
+  mediaObjects  MediaObject[]
+  reactions     Reaction[]
+  sentRequests     FriendRequest[] @relation("SentRequests")
+  receivedRequests FriendRequest[] @relation("ReceivedRequests")
+  blockedUsers     BlockedUser[]   @relation("UserBlocks")
+  blockedBy        BlockedUser[]   @relation("UserBlockedBy")
+  vaultEntries     VaultEntry[]
+  groupRequestsSent     GroupRequest[] @relation("GroupRequestsSent")
+  groupRequestsReceived GroupRequest[] @relation("GroupRequestsReceived")
+
+  @@index([status])
+  @@index([lastSeenAt])
+}
+
+model SignedPreKey {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keyId     Int
+  publicKey String
+  signature String
+  createdAt DateTime @default(now())
+  retiredAt DateTime?
+
+  @@unique([userId, keyId])
+  @@index([userId, retiredAt])
+}
+
+model OneTimePreKey {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keyId      Int
+  publicKey  String
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, keyId])
+  @@index([userId, consumedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Conversations
+// ---------------------------------------------------------------------------
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Conversation {
+  id             String           @id @default(uuid()) @db.Uuid
+  type           ConversationType
+  /// Group name is NOT encrypted in this build: it is needed for routing-free
+  /// display in the sidebar before any session exists. Documented in README.
+  title          String?          @db.VarChar(64)
+  avatarObjectKey String?
+  /// Bumped on membership removal so clients re-distribute Sender Keys.
+  keyEpoch       Int              @default(0)
+  maxMembers     Int              @default(256)
+  createdById    String?          @db.Uuid
+  createdAt      DateTime         @default(now())
+  lastActivityAt DateTime         @default(now())
+
+  members   ConversationMember[]
+  messages  Message[]
+  invites   GroupInvite[]
+  groupRequests GroupRequest[]
+
+  @@index([lastActivityAt])
+}
+
+model ConversationMember {
+  id             String      @id @default(uuid()) @db.Uuid
+  conversationId String      @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String      @db.Uuid
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           MemberRole  @default(MEMBER)
+  joinedAt       DateTime    @default(now())
+  lastReadAt     DateTime?
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+enum MessageKind {
+  TEXT
+  MEDIA
+  SYSTEM
+  CALL_EVENT
+}
+
+enum EnvelopeKind {
+  PAIRWISE
+  SENDER_KEY
+  SEALED
+}
+
+model Message {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  /// NULL means sealed sender: the server cannot attribute this message.
+  senderPseudoId String?      @db.Uuid
+  sender         User?        @relation(fields: [senderPseudoId], references: [id], onDelete: SetNull)
+
+  kind           MessageKind  @default(TEXT)
+  envelopeKind   EnvelopeKind
+  /// Server-blind session locator (never a user id).
+  sessionTag     String
+  header         String
+  ciphertext     String
+  signature      String?
+
+  /// Group key epoch this message was encrypted under.
+  keyEpoch       Int          @default(0)
+  clientRef      String
+  replyTo        String?
+  createdAt      DateTime     @default(now())
+  expiresAt      DateTime?
+
+  receipts       Receipt[]
+  reactions      Reaction[]
+
+  // Idempotent retries: a client re-sending the same ref must not duplicate.
+  @@unique([conversationId, clientRef])
+  @@index([conversationId, createdAt])
+  @@index([expiresAt])
+  @@index([senderPseudoId])
+}
+
+enum ReceiptState {
+  DELIVERED
+  READ
+}
+
+model Receipt {
+  id        String       @id @default(uuid()) @db.Uuid
+  messageId String       @db.Uuid
+  message   Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String       @db.Uuid
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  state     ReceiptState
+  at        DateTime     @default(now())
+
+  @@unique([messageId, userId, state])
+  @@index([userId, at])
+}
+
+model Reaction {
+  id        String   @id @default(uuid()) @db.Uuid
+  messageId String   @db.Uuid
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String   @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+}
+
+model GroupInvite {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdById    String       @db.Uuid
+  createdBy      User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  code           String       @unique
+  expiresAt      DateTime?
+  maxUses        Int?
+  uses           Int          @default(0)
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+// ---------------------------------------------------------------------------
+// Media (ciphertext only)
+// ---------------------------------------------------------------------------
+
+model MediaObject {
+  id         String   @id @default(uuid()) @db.Uuid
+  objectKey  String   @unique
+  ownerId    String   @db.Uuid
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bytes      Int
+  sha256     String
+  createdAt  DateTime @default(now())
+  /// Objects are deleted by the reaper once unreferenced and past this time.
+  deleteAfter DateTime?
+
+  @@index([ownerId])
+  @@index([deleteAfter])
+}
+
+// ---------------------------------------------------------------------------
+// Audit (no PII, no message content, no IPs)
+// ---------------------------------------------------------------------------
+
+model AuditEvent {
+  id        BigInt   @id @default(autoincrement())
+  actorId   String?  @db.Uuid
+  action    String   @db.VarChar(64)
+  target    String?  @db.VarChar(64)
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+}
+
+// ---------------------------------------------------------------------------
+// Friend Requests
+// ---------------------------------------------------------------------------
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model FriendRequest {
+  id         String              @id @default(uuid()) @db.Uuid
+  senderId   String              @db.Uuid
+  sender     User                @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String              @db.Uuid
+  receiver   User                @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     FriendRequestStatus @default(PENDING)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId, status])
+  @@index([receiverId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Blocked Users
+// ---------------------------------------------------------------------------
+
+model BlockedUser {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  user          User     @relation("UserBlocks", fields: [userId], references: [id], onDelete: Cascade)
+  blockedUserId String   @db.Uuid
+  blockedUser   User     @relation("UserBlockedBy", fields: [blockedUserId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, blockedUserId])
+  @@index([userId])
+  @@index([blockedUserId])
+}
+
+model AdminCredential {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique @db.VarChar(64)
+  passwordHash String   @db.VarChar(256)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// E2EE Encrypted Vault Sync (Client-side encrypted with derived vaultKey)
+// Server stores only ciphertext blobs and nonces; no plaintext ever reaches the server.
+// ---------------------------------------------------------------------------
+
+model VaultEntry {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key        String   @db.VarChar(512)
+  nonce      String   @db.VarChar(128)
+  ciphertext String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Group Requests (Admin invites user, user accepts/declines)
+// ---------------------------------------------------------------------------
+
+model GroupRequest {
+  id             String              @id @default(uuid()) @db.Uuid
+  conversationId String              @db.Uuid
+  conversation   Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  invitedById    String              @db.Uuid
+  invitedBy      User                @relation("GroupRequestsSent", fields: [invitedById], references: [id], onDelete: Cascade)
+  userId         String              @db.Uuid
+  user           User                @relation("GroupRequestsReceived", fields: [userId], references: [id], onDelete: Cascade)
+  inviteCode     String
+  status         FriendRequestStatus @default(PENDING)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([userId, status])
+  @@index([conversationId])
+}
+
+
+

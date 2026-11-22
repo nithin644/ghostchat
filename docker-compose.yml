@@ -1,0 +1,81 @@
+# GhostChat local/staging stack.
+#   docker compose --env-file .env up -d
+#
+# Note: there is deliberately no object-storage service here. Media defaults to
+# MEDIA_DRIVER=local (blobs on the API's own disk). If you want S3 semantics,
+# point MEDIA_DRIVER=s3 at any compatible endpoint — AWS S3, Ceph RGW, Garage,
+# SeaweedFS — and set S3_* accordingly. Pinning a specific container image for
+# this turned out to be fragile: MinIO stopped publishing public images, which
+# broke startup for reasons unrelated to the app.
+# The API and web app are intentionally NOT containerised here so that
+# `npm run dev` gives you hot reload. See README "Deployment" for the
+# production topology (separate media node, TLS terminator).
+name: ghostchat
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ghostchat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ghostchat}
+      # Hardening: no trust auth, no remote superuser.
+      POSTGRES_INITDB_ARGS: "--data-checksums --auth-host=scram-sha-256"
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - log_statement=none
+      - -c
+      - log_min_duration_statement=250
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ghostchat} -d ${POSTGRES_DB:-ghostchat}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Ephemeral-only datastore: appendonly off, allkeys-lru for queues.
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - "no"
+      - --save
+      - ""
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # TURN server. Required in production: clients behind symmetric NAT cannot
+  # establish WebRTC without it. Credentials are ephemeral (shared-secret
+  # scheme) so nothing static is shipped to the browser.
+  coturn:
+    image: coturn/coturn:4.6.2
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./infra/coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    command: ["-c", "/etc/coturn/turnserver.conf"]
+    # host networking keeps the UDP relay range simple; publish the ports on
+    # the firewall instead of via compose.
+
+volumes:
+  pgdata:

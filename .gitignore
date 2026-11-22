@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+!.env.example
+.DS_Store
+*.log
+npm-debug.log*
+.turbo/
+apps/api/prisma/migrations/dev.db*
+apps/api/prisma/*.db
+# never commit generated key material
+secrets/
+*.pem
+*.key
+.ghostchat-state/
+.ghostchat-state*
