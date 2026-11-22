@@ -83,7 +83,7 @@ export function lockVault(): void {
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && (k.startsWith('gc_v_') || k.startsWith('gc_out_'))) {
+        if (k && (k.startsWith('gc_') || k.startsWith('ghostchat_'))) {
           keysToRemove.push(k);
         }
       }
@@ -91,6 +91,47 @@ export function lockVault(): void {
         localStorage.removeItem(k);
       }
     } catch {}
+  }
+}
+
+/**
+ * Completely wipe the vault, memory keys, local storage, and IndexedDB store.
+ * Crucial on logout or identity mismatch to prevent cross-account key contamination.
+ */
+export async function clearVault(): Promise<void> {
+  lockVault();
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.clear();
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('gc_') || k.startsWith('ghostchat_'))) {
+          keysToRemove.push(k);
+        }
+      }
+      for (const k of keysToRemove) {
+        localStorage.removeItem(k);
+      }
+    } catch {}
+
+    try {
+      const db = await getDb();
+      if (db) {
+        await new Promise<void>((resolve) => {
+          try {
+            const tx = db.transaction(STORE, 'readwrite');
+            tx.objectStore(STORE).clear();
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => resolve();
+            tx.onabort = () => resolve();
+          } catch {
+            resolve();
+          }
+        });
+      }
+    } catch {}
+    cachedDbPromise = null;
   }
 }
 

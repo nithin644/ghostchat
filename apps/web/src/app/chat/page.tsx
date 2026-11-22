@@ -12,12 +12,13 @@ import {
   deriveSignedPreKey,
   deriveOneTimePreKeys,
   signBundle,
+  keyFingerprint,
   type IdentityKeyPair,
   type PublicPreKeyBundle,
 } from '@ghostchat/crypto';
 import type { ConversationDetail, MessageDTO, PublicUser, QuotedMessageDTO, UserSearchResult } from '@ghostchat/shared-types';
 import { api, resolveApiUrl } from '../../lib/api';
-import { vaultGet, unlockVault, getActiveIdentitySeed, vaultPut, lockVault, syncVaultWithServer } from '../../lib/vault';
+import { vaultGet, unlockVault, getActiveIdentitySeed, vaultPut, lockVault, clearVault, syncVaultWithServer } from '../../lib/vault';
 import {
   decryptDirect,
   decryptGroup,
@@ -25,6 +26,7 @@ import {
   encryptGroup,
   groupInviteSecret,
   resetSessions,
+  resetPeerSession,
   type StoredPreKeys,
 } from '../../lib/e2ee';
 import { getGroupSecret, storeGroupSecret } from '../../lib/groupKeys';
@@ -92,6 +94,7 @@ async function decryptMessage(
   conversationType: 'DIRECT' | 'GROUP',
   fallbackPeerPseudoId: string,
   preKeys: StoredPreKeys | null,
+  selfPseudoId?: string,
 ): Promise<string | null> {
   try {
     // GUARD 1: If we already decrypted this message in this session, do NOT
@@ -140,6 +143,7 @@ async function decryptMessage(
         peerId,
         message.envelope,
         preKeys,
+        selfPseudoId,
       );
     } else if (message.envelope.kind === 'SENDER_KEY') {
       const sender = message.senderPseudoId;
@@ -298,7 +302,22 @@ export default function ChatPage() {
           return;
         }
 
-        identityRef.current = identityFromSeed(seed);
+        const derivedIdentity = identityFromSeed(seed);
+        // CRITICAL SECURITY & STABILITY INVARIANT:
+        // Ensure the active in-memory seed actually belongs to the authenticated user.
+        // If a previous user logged out or switched accounts on this browser, a mismatched
+        // seed would corrupt ratchets and trigger permanent "Decryption failed" errors.
+        if (me.keyFingerprint) {
+          const derivedFp = keyFingerprint(derivedIdentity.sign.publicKey);
+          if (derivedFp !== me.keyFingerprint) {
+            console.warn('Identity seed mismatch with authenticated user! Purging stale vault.');
+            await clearVault();
+            router.replace('/onboarding');
+            return;
+          }
+        }
+
+        identityRef.current = derivedIdentity;
         // Sync encrypted vault entries across devices (e.g. laptop <-> mobile)
         await syncVaultWithServer().catch(() => null);
 
@@ -442,7 +461,7 @@ export default function ChatPage() {
               (message.clientRef ? localStorage.getItem(`gc_out_${message.clientRef}`) : null)
             : null);
       } else {
-        text = await decryptMessage(identity, message, type, conversationPeer(message.conversationId), preKeysRef.current);
+        text = await decryptMessage(identity, message, type, conversationPeer(message.conversationId), preKeysRef.current, user?.pseudoId);
       }
 
       if (text) {
@@ -599,7 +618,7 @@ export default function ChatPage() {
                   (message.clientRef ? localStorage.getItem(`gc_in_${message.clientRef}`) : null)
                 : null);
           } else if (identity) {
-            text = await decryptMessage(identity, message, convo.type, fallbackPeer, preKeysRef.current);
+            text = await decryptMessage(identity, message, convo.type, fallbackPeer, preKeysRef.current, user?.pseudoId);
           }
 
           // If we decrypted/retrieved it, also persist under the server ID so future
@@ -767,7 +786,7 @@ export default function ChatPage() {
                         (m.clientRef ? localStorage.getItem(`gc_in_${m.clientRef}`) : null)
                       : null);
                 } else {
-                  text = await decryptMessage(identity, m, convoType, fallbackPeer, preKeysRef.current);
+                  text = await decryptMessage(identity, m, convoType, fallbackPeer, preKeysRef.current, user.pseudoId);
                 }
 
                 const ui: UiMessage = {
@@ -891,6 +910,7 @@ export default function ChatPage() {
                     convoType,
                     fallbackPeer,
                     preKeysRef.current,
+                    user.pseudoId,
                   ));
                 if (text) {
                   dispatch(patchMessage({
@@ -1049,6 +1069,7 @@ export default function ChatPage() {
         identity,
         { pseudoId: peer.pseudoId, contactCode },
         text,
+        user.pseudoId,
       );
 
       getSocket().emit(
@@ -1164,11 +1185,32 @@ export default function ChatPage() {
     await api.logout().catch(() => undefined);
     closeSocket();
     resetSessions();
-    lockVault();
+    await clearVault();
     dispatch(clearUser());
     dispatch(resetChat());
     router.replace('/onboarding');
   };
+
+  const handleResetSession = useCallback(async (conversationId: string) => {
+    const convo = conversationsRef.current.find((c) => c.id === conversationId);
+    if (!convo || convo.type !== 'DIRECT') return;
+    const peer = convo.peer;
+    if (!peer) return;
+
+    await resetPeerSession(peer.pseudoId, user?.pseudoId);
+    // Remove local cache of failed messages for this conversation so next fetch can retry
+    if (typeof window !== 'undefined') {
+      const toRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith(`gc_in_${conversationId}`) || k.startsWith(`gc_out_${conversationId}`))) {
+          toRemove.push(k);
+        }
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+    }
+    alert(`Encryption session reset for ${peer.displayName || 'this contact'}. Sending a new message will automatically establish a fresh, synchronized key exchange.`);
+  }, [user?.pseudoId]);
 
   const handleDeleteChat = useCallback(async (conversationId: string) => {
     if (!window.confirm('Delete this chat? All messages in this conversation will be permanently removed.')) {
@@ -1428,6 +1470,7 @@ export default function ChatPage() {
             setDetail(null);
           }}
           onLogout={() => void logout()}
+          onResetSession={(convId) => void handleResetSession(convId)}
           onDeleteChat={() => detail && void handleDeleteChat(detail.id)}
           onBlockUser={() => activePeer && void handleBlockUser(activePeer.pseudoId, activePeer.displayName)}
           onUnblockUser={() => activePeer && void handleUnblockUser(activePeer.pseudoId, activePeer.displayName)}

@@ -72,23 +72,46 @@ export function resetSessions(): void {
   receiverKeys.clear();
 }
 
-function sessionKey(peerPseudoId: string): string {
-  return `ratchet:${peerPseudoId}`;
+function sessionKey(peerPseudoId: string, selfPseudoId?: string): string {
+  return selfPseudoId ? `ratchet:${selfPseudoId}:${peerPseudoId}` : `ratchet:${peerPseudoId}`;
 }
 
-async function persist(peerPseudoId: string, state: RatchetState): Promise<void> {
+export async function resetPeerSession(peerPseudoId: string, selfPseudoId?: string): Promise<void> {
+  sessions.delete(peerPseudoId);
+  if (selfPseudoId) {
+    sessions.delete(`${selfPseudoId}:${peerPseudoId}`);
+    await vaultDelete(sessionKey(peerPseudoId, selfPseudoId)).catch(() => {});
+  }
+  await vaultDelete(sessionKey(peerPseudoId)).catch(() => {});
+}
+
+async function persist(peerPseudoId: string, state: RatchetState, selfPseudoId?: string): Promise<void> {
+  const memKey = selfPseudoId ? `${selfPseudoId}:${peerPseudoId}` : peerPseudoId;
+  sessions.set(memKey, state);
+  sessions.set(peerPseudoId, state);
+  if (selfPseudoId) {
+    await vaultPut(sessionKey(peerPseudoId, selfPseudoId), serializeState(state));
+  }
   await vaultPut(sessionKey(peerPseudoId), serializeState(state));
 }
 
-export async function loadSession(peerPseudoId: string, force = false): Promise<RatchetState | null> {
+export async function loadSession(peerPseudoId: string, force = false, selfPseudoId?: string): Promise<RatchetState | null> {
+  const memKey = selfPseudoId ? `${selfPseudoId}:${peerPseudoId}` : peerPseudoId;
   if (!force) {
-    const cached = sessions.get(peerPseudoId);
+    const cached = sessions.get(memKey) || sessions.get(peerPseudoId);
     if (cached) return cached;
   }
 
-  const stored = await vaultGet<SerializedRatchetState>(sessionKey(peerPseudoId));
-  if (!stored) return sessions.get(peerPseudoId) ?? null;
+  let stored: SerializedRatchetState | null = null;
+  if (selfPseudoId) {
+    stored = await vaultGet<SerializedRatchetState>(sessionKey(peerPseudoId, selfPseudoId));
+  }
+  if (!stored) {
+    stored = await vaultGet<SerializedRatchetState>(sessionKey(peerPseudoId));
+  }
+  if (!stored) return sessions.get(memKey) ?? sessions.get(peerPseudoId) ?? null;
   const state = deserializeState(stored);
+  sessions.set(memKey, state);
   sessions.set(peerPseudoId, state);
   return state;
 }
@@ -116,16 +139,19 @@ export async function encryptDirect(
   identity: IdentityKeyPair,
   peer: { pseudoId: string; contactCode: string },
   plaintext: string,
+  selfPseudoId?: string,
 ): Promise<Envelope> {
-  let state = await loadSession(peer.pseudoId);
+  let state = await loadSession(peer.pseudoId, false, selfPseudoId);
   let prelude: PreKeyPrelude | null = null;
 
   if (!state) {
-    // First message: verify the bundle, run X3DH, start as initiator.
+    // First message or session reset: verify the bundle, run X3DH, start as initiator.
     const dto = await api.bundle(peer.contactCode);
     const bundle = toBundle(dto);
     const init = await x3dhInitiate(identity, bundle, b64d(dto.bundleSignature));
     state = ratchetInitInitiator(init.sharedSecret, bundle.signedPreKey.publicKey);
+    const memKey = selfPseudoId ? `${selfPseudoId}:${peer.pseudoId}` : peer.pseudoId;
+    sessions.set(memKey, state);
     sessions.set(peer.pseudoId, state);
 
     prelude = {
@@ -139,7 +165,7 @@ export async function encryptDirect(
   }
 
   const message = await ratchetEncrypt(state, utf8(plaintext));
-  await persist(peer.pseudoId, state);
+  await persist(peer.pseudoId, state, selfPseudoId);
 
   if (prelude) {
     prelude.h = b64e(message.header);
@@ -164,9 +190,10 @@ export async function decryptDirect(
   fromPseudoId: string,
   envelope: Envelope,
   preKeys: StoredPreKeys | null,
+  selfPseudoId?: string,
 ): Promise<string> {
   let header = b64d(envelope.header);
-  let state = await loadSession(fromPseudoId);
+  let state = await loadSession(fromPseudoId, false, selfPseudoId);
 
   // Detect the pre-key prelude. It is JSON, a ratchet header never is.
   if (header.length > 0 && header[0] === 0x7b /* '{' */) {
@@ -206,6 +233,8 @@ export async function decryptDirect(
     );
 
     state = ratchetInitResponder(responded.sharedSecret, spkKey);
+    const memKey = selfPseudoId ? `${selfPseudoId}:${fromPseudoId}` : fromPseudoId;
+    sessions.set(memKey, state);
     sessions.set(fromPseudoId, state);
     header = b64d(prelude.h);
   }
@@ -218,15 +247,15 @@ export async function decryptDirect(
 
   try {
     const plaintext = await ratchetDecrypt(state, header, b64d(envelope.ciphertext));
-    await persist(fromPseudoId, state);
+    await persist(fromPseudoId, state, selfPseudoId);
     return fromUtf8(plaintext);
   } catch (err) {
     // Retry once with freshly reloaded state from vault in case of multi-tab or concurrent write
     try {
-      const freshState = await loadSession(fromPseudoId, true);
+      const freshState = await loadSession(fromPseudoId, true, selfPseudoId);
       if (freshState && freshState !== state) {
         const plaintext = await ratchetDecrypt(freshState, header, b64d(envelope.ciphertext));
-        await persist(fromPseudoId, freshState);
+        await persist(fromPseudoId, freshState, selfPseudoId);
         return fromUtf8(plaintext);
       }
     } catch {
@@ -239,8 +268,7 @@ export async function decryptDirect(
     // will re-initialize cleanly.
     const rawHeader = b64d(envelope.header);
     if (rawHeader.length > 0 && rawHeader[0] === 0x7b /* '{' */) {
-      sessions.delete(fromPseudoId);
-      await vaultDelete(sessionKey(fromPseudoId)).catch(() => {});
+      await resetPeerSession(fromPseudoId, selfPseudoId);
     }
 
     console.warn('decryptDirect failed for message:', err);

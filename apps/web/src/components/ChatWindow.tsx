@@ -34,6 +34,7 @@ export interface ChatWindowProps {
   onStartCall: (kind: 'AUDIO' | 'VIDEO', screenShare?: boolean) => void;
   onBack: () => void;
   onLogout?: () => void;
+  onResetSession?: (conversationId: string) => void;
   onDeleteChat?: () => void;
   onBlockUser?: () => void;
   onUnblockUser?: () => void;
@@ -110,6 +111,7 @@ export function ChatWindow({
   onStartCall,
   onBack,
   onLogout,
+  onResetSession,
   onDeleteChat,
   onBlockUser,
   onUnblockUser,
@@ -756,6 +758,25 @@ export function ChatWindow({
                   : 'bg-white border-[#E9EDEF] text-[#111B21]'
               }`}
             >
+              {conversation.type === 'DIRECT' && onResetSession && (
+                <button
+                  onClick={() => {
+                    setOptionsOpen(false);
+                    onResetSession(conversation.id);
+                  }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition text-left text-amber-500 hover:text-amber-400 ${
+                    isHacker
+                      ? 'hover:bg-[#00FF66]/10'
+                      : isPro
+                      ? 'hover:bg-white/5'
+                      : 'hover:bg-[#F5F6F6]'
+                  }`}
+                  title="Re-synchronize E2EE encryption if messages fail to decrypt"
+                >
+                  <span className="text-sm">🔄</span>
+                  <span>Re-sync Encryption</span>
+                </button>
+              )}
               {conversation.type === 'DIRECT' && (
                 <button
                   onClick={() => {
@@ -972,12 +993,32 @@ export function ChatWindow({
                   {/* Message Content */}
                   {message.text?.startsWith('[file] ') ? (
                     <FileAttachment text={message.text} isMine={isMine} theme={theme} />
+                  ) : message.failed ? (
+                    <div className="flex flex-col gap-1 py-0.5">
+                      <div className="flex items-center gap-1.5 text-amber-500 font-semibold text-xs">
+                        <span>⚠️ Decryption failed</span>
+                      </div>
+                      <span className="text-[11px] opacity-75">
+                        Encryption keys were out of sync.
+                      </span>
+                      {onResetSession && conversation?.type === 'DIRECT' && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onResetSession(conversation.id);
+                          }}
+                          className="mt-1 self-start inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-300 font-medium text-[11px] transition border border-amber-500/30 cursor-pointer"
+                        >
+                          <span>🔄</span>
+                          <span>Re-sync Session</span>
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <p className="break-words whitespace-pre-wrap">
                       {message.text ??
-                        (message.failed
-                          ? '⚠️ Decryption failed'
-                          : isMine
+                        (isMine
                           ? '🔒 Encrypted message'
                           : '🔒 Encrypted message')}
                     </p>
