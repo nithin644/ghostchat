@@ -18,11 +18,13 @@
 - [Demo & Screenshots](#-demo--screenshots)
 - [Key Features](#-key-features)
   - [Zero-Knowledge Identity & Authentication](#1-zero-knowledge-identity--authentication)
-  - [Next-Gen WhatsApp Experience](#2-next-gen-whatsapp-experience)
-  - [Voice Notes, Walkie-Talkie & Media](#3-voice-notes-walkie-talkie--media)
-  - [P2P Encrypted Calls & Screen Sharing](#4-p2p-encrypted-calls--screen-sharing)
-  - [WhatsApp-Style Group Architecture](#5-whatsapp-style-group-architecture)
-  - [Administration & Fleet Console](#6-administration--fleet-console)
+  - [Next-Gen WhatsApp Experience & 5 Curated Themes](#2-next-gen-whatsapp-experience--5-curated-themes)
+  - [Interactive Real-Time FX Commands (/bomb, /fire, /love)](#3-interactive-real-time-fx-commands-bomb-fire-love)
+  - [Voice Notes, Walkie-Talkie & Media](#4-voice-notes-walkie-talkie--media)
+  - [P2P Encrypted Calls & Screen Sharing](#5-p2p-encrypted-calls--screen-sharing)
+  - [WhatsApp-Style Group Architecture](#6-whatsapp-style-group-architecture)
+  - [Administration & Fleet Console](#7-administration--fleet-console)
+  - [One-Click Production Launch & Stylized Banner](#8-one-click-production-launch--stylized-banner)
 - [End-to-End Cryptography & Security](#-end-to-end-cryptography--security)
   - [Identity & Key Derivation](#identity--key-derivation)
   - [1:1 Messaging (X3DH + Double Ratchet)](#11-messaging-x3dh--double-ratchet)
@@ -89,49 +91,70 @@
 ## 📸 Demo & Screenshots
 
 <div align="center">
-  <h3>Desktop Chat & E2EE Secure Messaging</h3>
+  <h3>✨ Desktop Chat & E2EE Secure Messaging</h3>
   <p><i>Full WhatsApp-style conversational interface with reactions, reply quote threads, and verified contact identification.</i></p>
-  <img src="docs/screenshots/chat-main.png" alt="GhostChat Desktop Interface" width="900" />
+  <!-- Replace the placeholder URL below with your screenshot URL -->
+  <img src="https://via.placeholder.com/1200x675.png?text=GhostChat+Desktop+Interface" alt="GhostChat Desktop Interface" width="900" />
 </div>
 
 <br/>
 
 <div align="center">
-  <table border="0" cellspacing="10">
+  <table border="0" cellspacing="10" cellpadding="8">
     <tr>
+      <td width="50%" align="center">
+        <b>💥 Interactive FX Reactions (/bomb, /fire, /love)</b><br/>
+        <sub>Screen shake, synchronized particle explosions & audio synthesis</sub><br/><br/>
+        <!-- Replace the placeholder URL below with your screenshot URL -->
+        <img src="https://via.placeholder.com/600x400.png?text=Interactive+Slash+FX+Reactions" alt="Interactive Slash FX Reactions" width="420" />
+      </td>
+      <td width="50%" align="center">
+        <b>🎨 5 Curated Themes & Instant Switching</b><br/>
+        <sub>Midnight Obsidian, Executive Slate, Nordic Minimalist, Hacker & Normal</sub><br/><br/>
+        <!-- Replace the placeholder URL below with your screenshot URL -->
+        <img src="https://via.placeholder.com/600x400.png?text=5+Curated+Themes+Showcase" alt="5 Curated Themes Showcase" width="420" />
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center">
+        <b>🎙️ Walkie-Talkie & Waveform Voice Notes</b><br/>
+        <sub>Live PTT intercom with audio visualizer and waveform recorder</sub><br/><br/>
+        <!-- Replace the placeholder URL below with your screenshot URL -->
+        <img src="https://via.placeholder.com/600x400.png?text=Walkie-Talkie+and+Voice+Notes" alt="Walkie Talkie and Voice Note" width="420" />
+      </td>
       <td width="50%" align="center">
         <b>📱 Responsive Mobile View</b><br/>
         <sub>Optimized for mobile Chrome, Safari, and Tor Browser</sub><br/><br/>
-        <img src="docs/screenshots/mobile-view.png" alt="Mobile Chat Experience" width="420" />
-      </td>
-      <td width="50%" align="center">
-        <b>🎙️ Walkie-Talkie & Voice Notes</b><br/>
-        <sub>Live PTT intercom with audio visualizer and waveform recorder</sub><br/><br/>
-        <img src="docs/screenshots/walkie-talkie.png" alt="Walkie Talkie and Voice Note" width="420" />
+        <!-- Replace the placeholder URL below with your screenshot URL -->
+        <img src="https://via.placeholder.com/600x400.png?text=Responsive+Mobile+Chat" alt="Mobile Chat Experience" width="420" />
       </td>
     </tr>
     <tr>
       <td width="50%" align="center">
         <b>📹 E2EE Video Calling & Screen Share</b><br/>
         <sub>WebRTC encrypted video streaming & live desktop broadcast</sub><br/><br/>
-        <img src="docs/screenshots/video-call.png" alt="Video Call & Screen Share" width="420" />
+        <!-- Replace the placeholder URL below with your screenshot URL -->
+        <img src="https://via.placeholder.com/600x400.png?text=Video+Call+and+Screen+Share" alt="Video Call & Screen Share" width="420" />
       </td>
       <td width="50%" align="center">
         <b>👥 WhatsApp Groups & Invites</b><br/>
         <sub>2-step group creator with member roster & invite management</sub><br/><br/>
-        <img src="docs/screenshots/group-chat.png" alt="Group Management and Invites" width="420" />
+        <!-- Replace the placeholder URL below with your screenshot URL -->
+        <img src="https://via.placeholder.com/600x400.png?text=Group+Management+and+Invites" alt="Group Management and Invites" width="420" />
       </td>
     </tr>
     <tr>
       <td width="50%" align="center">
         <b>🛡️ Fleet Administration Console</b><br/>
         <sub>Access key minting, user verification, and account controls</sub><br/><br/>
-        <img src="docs/screenshots/admin-dashboard.png" alt="Admin Fleet Dashboard" width="420" />
+        <!-- Replace the placeholder URL below with your screenshot URL -->
+        <img src="https://via.placeholder.com/600x400.png?text=Admin+Fleet+Dashboard" alt="Admin Fleet Dashboard" width="420" />
       </td>
       <td width="50%" align="center">
-        <b>⚡ 5 Curated Themes</b><br/>
-        <sub>Normal, Midnight Obsidian, Executive, Nordic Minimalist, and Hacker</sub><br/><br/>
-        <img src="docs/screenshots/themes.png" alt="Themes Showcase" width="420" />
+        <b>🚀 Stylized Startup Banner (run.sh)</b><br/>
+        <sub>Gradient ASCII art, developer tagline & clean dual-stack URLs</sub><br/><br/>
+        <!-- Replace the placeholder URL below with your screenshot URL -->
+        <img src="https://via.placeholder.com/600x400.png?text=GhostChat+Terminal+Startup+Banner" alt="Terminal Startup Banner" width="420" />
       </td>
     </tr>
   </table>
@@ -146,13 +169,16 @@
 - **Deterministic Key Derivation**: Private identity keys are derived in-memory on the client via **Argon2id** and **BLAKE2b**.
 - **Challenge-Response Login**: The access key is **never transmitted** over the wire. Authentication is conducted using Ed25519 digital signatures.
 
-### 2. Next-Gen WhatsApp Experience
-- **WhatsApp UI / UX**: Clean, intuitive interface with 5 adaptable themes:
+### 2. Next-Gen WhatsApp Experience & 5 Curated Themes
+- **WhatsApp UI / UX**: Clean, intuitive interface with 5 adaptable, handcrafted themes:
   - **Normal** 🌿: Authentic WhatsApp classic green with soft light panels.
-  - **Midnight Obsidian** 🌌: Sleek OLED charcoal dark mode with royal indigo/violet accents.
-  - **Executive** 💼: Dark professional corporate slate navy with blue accents.
+  - **Midnight Obsidian** 🌌: Sleek OLED charcoal dark mode with royal indigo/violet accents and flawless deep dark surfaces.
+  - **Executive** 💼: Dark professional corporate slate navy with refined royal blue accents.
   - **Nordic Minimalist** ❄️: Crisp, ultra-clean daylight theme with sapphire blue accents.
-  - **Hacker** ⚡: Terminal cyberpunk matrix neon green (`#00FF66`) on pitch black.
+  - **Hacker** ⚡: Cyberpunk Matrix terminal neon green (`#00FF66`) on pitch black.
+- **Header Profile Bar & One-Click Logout**:
+  - Prominent, user-friendly **Logout** button with confirmation modal that safely clears cryptographic vault memory, keys, and cookies.
+  - Instant theme dropdown switcher right in the top navigation bar.
 - **Copy, Reply & Forward**:
   - **1-Click Copy**: Instant clipboard copying with fallback and toast feedback.
   - **Contextual Reply**: Floating quote preview bar, input autofocus, and click-to-scroll navigation that smoothly highlights original messages.
@@ -160,25 +186,36 @@
 - **Message Reactions**: Fast emoji reaction picker with aggregate badge counters.
 - **3-Digit Numeric User IDs**: Quick-find identifiers (e.g. `987`, `781`) for instant contact lookup and friend requests.
 
-### 3. Voice Notes, Walkie-Talkie & Media
+### 3. Interactive Real-Time FX Commands (`/bomb`, `/fire`, `/love`)
+- **Synchronized Full-Screen Effects**: Type command directly in chat; triggers an interactive sensory animation on both your screen and the recipient's screen simultaneously with zero message pollution:
+  - 💣 **`/bomb`**: Bomb drop trajectory, realistic screen shake, synthesized explosion blast audio, shockwave rings, and smoke particle physics.
+  - 🔥 **`/fire`**: Roaring flame wall, upward rising ember sparks, blazing fire sound effect, screen edge glow, and "🔥 ON FIRE! 🔥" banner.
+  - 💖 **`/love`**: Cascading 3D floating hearts fountain, romantic harp arpeggio chimes, ambient heartbeat pulse, and "💖 WITH LOVE 💖" banner (strictly timed to 2.0s).
+- **Haptic Feedback**: Integrates device vibration API on supported mobile browsers.
+
+### 4. Voice Notes, Walkie-Talkie & Media
 - **Walkie-Talkie (Push-to-Talk / PTT)**: Ultra-low-latency real-time voice intercom between peers with dynamic audio spectrum analysis. Hold to talk, release to listen.
 - **Voice Notes**: WhatsApp-style audio recorder with interactive waveform visualization, recording timer, and variable playback speeds (1x, 1.5x, 2x).
 - **Client-Side Media Encryption**: Photos, videos, voice recordings, and documents are encrypted using XChaCha20-Poly1305 before upload.
 
-### 4. P2P Encrypted Calls & Screen Sharing
+### 5. P2P Encrypted Calls & Screen Sharing
 - **1:1 Audio & Video Calls**: WebRTC peer-to-peer connection with DTLS-SRTP end-to-end encryption.
 - **Live Desktop Screen Sharing**: Broadcast your screen in real time with toggleable microphone audio, camera switching, and picture-in-picture minimization so you can chat while sharing.
 
-### 5. WhatsApp-Style Group Architecture
+### 6. WhatsApp-Style Group Architecture
 - **2-Step Group Creator**: Select contacts via searchable chips, define group title/avatar emoji, and initiate invites.
 - **Group Requests & Invites**: Non-admin users receive incoming invitations in the **REQUESTS** tab with **Accept** and **Decline** options.
 - **Member Roster & Admin Controls**: Group info drawer displaying participant counts, "Group Admin" badges, "+ Add Members" drawer, member removal, and exit controls.
 
-### 6. Administration & Fleet Console
+### 7. Administration & Fleet Console
 - **Admin Dashboard (`/admin`)**: Clean control plane for network operators.
 - **Access Key Minting**: Generate batch invite keys with 1-click **"Copy All Keys"** or individual copy.
 - **User Management**: Inspect public key fingerprints, contact codes, IP telemetry, and reassign 3-digit User IDs.
 - **Ban & Permanent Deletion**: 1-click ban permanently purges user data, direct conversations, message ciphertexts, and terminates all active sessions.
+
+### 8. One-Click Production Launch & Stylized Banner
+- **Single Master Script (`./run.sh`)**: Automatically checks dependencies, boots PostgreSQL and Redis containers, generates Prisma client, compiles typescript packages, spins up Tor onion services, and generates public Cloudflare tunnels.
+- **Noise-Free Stylized Terminal**: Silences background build chatter and prints a 24-bit multi-gradient ASCII banner (`Developed By Nithin Palegar>`) along with formatted URL boxes for public, LAN, and onion access.
 
 ---
 
@@ -286,7 +323,7 @@ The easiest and fastest way to deploy GhostChat. One command configures dependen
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/ghostchat.git
+git clone https://github.com/nithin644/ghostchat.git
 cd ghostchat
 
 # 2. Grant execution permissions
